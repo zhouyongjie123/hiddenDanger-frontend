@@ -51,7 +51,7 @@
             <el-tabs v-model="activeTab" class="login-tab">
               <el-tab-pane label="账号密码登录" name="account">
                 <el-form
-                  ref="loginFormRef"
+                  ref="accountFormRef"
                   :model="loginForm"
                   :rules="accountLoginRules"
                   class="login-form"
@@ -81,7 +81,7 @@
               </el-tab-pane>
               <el-tab-pane label="手机号登录" name="phone">
                 <el-form
-                  ref="loginFormRef"
+                  ref="phoneFormRef"
                   :model="loginForm"
                   :rules="phoneLoginRules"
                   class="login-form"
@@ -181,7 +181,8 @@ import type { LoginRequest } from '@/types/api'
 
 const router = useRouter()
 const userStore = useUserStore()
-const loginFormRef = ref<FormInstance>()
+const accountFormRef = ref<FormInstance>()
+const phoneFormRef = ref<FormInstance>()
 const loading = ref(false)
 const rememberMe = ref(false)
 const activeTab = ref('account')
@@ -216,30 +217,56 @@ const phoneLoginRules: FormRules = {
 }
 
 const handleLogin = async () => {
-  if (!loginFormRef.value) return
+  let formRef
+  if (activeTab.value === 'account') {
+    formRef = accountFormRef.value
+  } else {
+    formRef = phoneFormRef.value
+  }
+  
+  if (!formRef) return
 
-  await loginFormRef.value.validate((valid) => {
+  try {
+    const valid = await formRef.validate()
     if (valid) {
       loading.value = true
       
+      // 根据当前登录方式构建请求数据
+      let loginData = {}
+      if (activeTab.value === 'account') {
+        // 账号密码登录
+        loginData = {
+          account: loginForm.account,
+          password: loginForm.password
+        }
+      } else {
+        // 手机号验证码登录
+        loginData = {
+          phoneNumber: loginForm.phoneNumber,
+          verificationCode: loginForm.verificationCode
+        }
+      }
+      
+      console.log('登录请求数据:', loginData)
+      
       // 调用后端登录接口
-      authApi.login(loginForm)
-        .then((userInfo) => {
-          loading.value = false
-          
-          // 存储用户信息
-          userStore.setToken('token-' + Date.now()) // 实际项目中应该使用后端返回的token
-          userStore.setUserInfo(userInfo)
-          
-          ElMessage.success('登录成功，欢迎回来！')
-          router.push('/')
-        })
-        .catch((error) => {
-          loading.value = false
-          console.error('登录失败:', error)
-        })
+      const userInfo = await authApi.login(loginData)
+      console.log('登录成功，用户信息:', userInfo)
+      
+      loading.value = false
+      
+      // 存储用户信息
+      userStore.setToken('token-' + Date.now()) // 实际项目中应该使用后端返回的token
+      userStore.setUserInfo(userInfo)
+      
+      ElMessage.success('登录成功，欢迎回来！')
+      router.push('/')
     }
-  })
+  } catch (error) {
+    loading.value = false
+    console.error('登录失败:', error)
+    ElMessage.error('登录失败，请检查网络连接或后端服务是否运行')
+  }
 }
 
 const getVerificationCode = () => {

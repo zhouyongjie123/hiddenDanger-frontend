@@ -123,6 +123,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAppStore, useUserStore } from '@/stores'
+import { authApi } from '@/api/auth'
+import { ElMessage } from 'element-plus'
 import Breadcrumb from '@/components/Breadcrumb.vue'
 import { 
   UserFilled, 
@@ -147,7 +149,7 @@ const router = useRouter()
 const appStore = useAppStore()
 const userStore = useUserStore()
 
-const handleCommand = (command: string) => {
+const handleCommand = async (command: string) => {
   switch (command) {
     case 'profile':
       router.push('/profile')
@@ -155,8 +157,19 @@ const handleCommand = (command: string) => {
     case 'settings':
       break
     case 'logout':
-      userStore.clearToken()
-      router.push('/login')
+      try {
+        // 调用后端退出登录接口
+        await authApi.logout()
+        // 清除本地token和用户信息
+        userStore.clearToken()
+        ElMessage.success('退出登录成功')
+        router.push('/login')
+      } catch (error) {
+        console.error('退出登录失败:', error)
+        // 即使后端接口失败，也要清除本地token和用户信息
+        userStore.clearToken()
+        router.push('/login')
+      }
       break
   }
 }

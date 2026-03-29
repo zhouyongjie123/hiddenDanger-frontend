@@ -10,7 +10,7 @@ export const authApi = {
 
   // 用户登出
   logout() {
-    return http.post('/auth/logout')
+    return http.delete('/auth/logout')
   },
 
   // 获取当前用户信息
