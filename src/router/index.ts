@@ -23,6 +23,24 @@ const router = createRouter({
           meta: { title: '首页', icon: 'HomeFilled' },
         },
         {
+          path: '/danger',
+          name: 'danger',
+          component: () => import('@/views/danger/list.vue'),
+          meta: { title: '隐患列表', icon: 'Warning' },
+        },
+        {
+          path: '/danger/report',
+          name: 'danger-report',
+          component: () => import('@/views/danger/report.vue'),
+          meta: { title: '隐患上报', icon: 'DocumentAdd' },
+        },
+        {
+          path: '/danger/track',
+          name: 'danger-track',
+          component: () => import('@/views/danger/track.vue'),
+          meta: { title: '整改跟踪', icon: 'Refresh' },
+        },
+        {
           path: '/about',
           name: 'about',
           component: () => import('@/views/about/index.vue'),

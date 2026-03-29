@@ -5,6 +5,7 @@ import type { UserInfo } from '@/types/api'
 // 用户状态管理
 export const useUserStore = defineStore('user', () => {
   const token = ref<string>(localStorage.getItem('token') || '')
+  const tokenName = ref<string>(localStorage.getItem('tokenName') || '')
   const userInfo = ref<UserInfo | null>(null)
 
   const isLoggedIn = computed(() => !!token.value)
@@ -14,21 +15,32 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('token', newToken)
   }
 
+  const setTokenName = (name: string) => {
+    tokenName.value = name
+    localStorage.setItem('tokenName', name)
+  }
+
   const clearToken = () => {
     token.value = ''
+    tokenName.value = ''
     userInfo.value = null
     localStorage.removeItem('token')
+    localStorage.removeItem('tokenName')
   }
 
   const setUserInfo = (info: UserInfo) => {
     userInfo.value = info
+    setToken(info.tokenValue)
+    setTokenName(info.tokenName)
   }
 
   return {
     token,
+    tokenName,
     userInfo,
     isLoggedIn,
     setToken,
+    setTokenName,
     clearToken,
     setUserInfo,
   }

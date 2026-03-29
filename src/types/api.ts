@@ -21,7 +21,34 @@ export interface UserInfo {
   phoneNumber: string
   departmentName: string
   roleName: string
+  tokenName: string
+  tokenValue: string
 }
 
 // 登录接口响应类型
 export type LoginResponse = ApiResponse<UserInfo>
+
+// 隐患记录
+interface DangerRecord {
+  name: string
+  description: string
+  location: string
+  riskLevel: string
+  riskType: string
+  responsibleDepartmentName: string
+  responsiblePersonName: string
+  discoveryTime: string
+  rectificationDeadline: string
+  status: string
+  source: string
+}
+
+// 隐患记录列表响应
+export interface DangerRecordListResponse {
+  code: string
+  message: string
+  data: DangerRecord[]
+  total: number
+  current: number
+  size: number
+}

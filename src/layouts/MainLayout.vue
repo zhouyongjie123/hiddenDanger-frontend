@@ -24,7 +24,7 @@
             <el-icon><Warning /></el-icon>
             <span>隐患管理</span>
           </template>
-          <el-menu-item index="/danger/list">隐患列表</el-menu-item>
+          <el-menu-item index="/danger">隐患列表</el-menu-item>
           <el-menu-item index="/danger/report">隐患上报</el-menu-item>
           <el-menu-item index="/danger/track">整改跟踪</el-menu-item>
         </el-sub-menu>

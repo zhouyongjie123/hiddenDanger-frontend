@@ -250,13 +250,13 @@ const handleLogin = async () => {
       console.log('登录请求数据:', loginData)
       
       // 调用后端登录接口
-      const userInfo = await authApi.login(loginData)
-      console.log('登录成功，用户信息:', userInfo)
+      const response = await authApi.login(loginData)
+      console.log('登录成功，响应:', response)
+      const userInfo = response.data
       
       loading.value = false
       
       // 存储用户信息
-      userStore.setToken('token-' + Date.now()) // 实际项目中应该使用后端返回的token
       userStore.setUserInfo(userInfo)
       
       ElMessage.success('登录成功，欢迎回来！')

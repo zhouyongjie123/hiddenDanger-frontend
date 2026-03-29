@@ -15,9 +15,10 @@ const request: AxiosInstance = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
+    // 在发送请求之前做些什么
     const userStore = useUserStore()
-    if (userStore.token) {
-      config.headers.Authorization = `Bearer ${userStore.token}`
+    if (userStore.token && userStore.tokenName) {
+      config.headers[userStore.tokenName] = userStore.token
     }
     return config
   },
@@ -72,19 +73,19 @@ request.interceptors.response.use(
 // 封装请求方法
 export const http = {
   get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return request.get(url, config).then((res) => res.data.data)
+    return request.get(url, config).then((res) => res.data)
   },
 
   post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    return request.post(url, data, config).then((res) => res.data.data)
+    return request.post(url, data, config).then((res) => res.data)
   },
 
   put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-    return request.put(url, data, config).then((res) => res.data.data)
+    return request.put(url, data, config).then((res) => res.data)
   },
 
   delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
-    return request.delete(url, config).then((res) => res.data.data)
+    return request.delete(url, config).then((res) => res.data)
   },
 }
 
