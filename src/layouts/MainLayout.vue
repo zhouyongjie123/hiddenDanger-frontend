@@ -47,6 +47,21 @@
           <el-menu-item index="/analysis/trend">趋势分析</el-menu-item>
         </el-sub-menu>
         
+        <el-menu-item v-if="userStore.userInfo?.roleName === '管理员'" index="/user">
+          <el-icon><User /></el-icon>
+          <template #title>用户管理</template>
+        </el-menu-item>
+        
+        <el-menu-item index="/dept">
+          <el-icon><OfficeBuilding /></el-icon>
+          <template #title>部门管理</template>
+        </el-menu-item>
+        
+        <el-menu-item v-if="userStore.userInfo?.roleName === '管理员'" index="/role">
+          <el-icon><Position /></el-icon>
+          <template #title>角色管理</template>
+        </el-menu-item>
+        
         <el-menu-item index="/about">
           <el-icon><InfoFilled /></el-icon>
           <template #title>关于系统</template>
@@ -82,7 +97,7 @@
           <!-- 用户下拉 -->
           <el-dropdown @command="handleCommand" class="user-dropdown">
             <div class="user-info">
-              <el-avatar :size="36" :icon="UserFilled" class="user-avatar" />
+              <el-avatar :size="36" :src="userStore.userInfo?.avatarUrl || undefined" :icon="UserFilled" class="user-avatar" />
               <div class="user-detail" v-if="!appStore.sidebarCollapsed">
                 <span class="username">{{ userStore.userInfo?.realName || userStore.userInfo?.account || '管理员' }}</span>
                 <span class="user-role">{{ userStore.userInfo?.departmentName || '安全管理员' }}</span>
@@ -142,7 +157,9 @@ import {
   ArrowDown,
   Fold,
   Expand,
-  CircleCheck
+  CircleCheck,
+  OfficeBuilding,
+  Position
 } from '@element-plus/icons-vue'
 
 const router = useRouter()

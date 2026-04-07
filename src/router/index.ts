@@ -41,6 +41,24 @@ const router = createRouter({
           meta: { title: '整改跟踪', icon: 'Refresh' },
         },
         {
+          path: '/user',
+          name: 'user',
+          component: () => import('@/views/user/list.vue'),
+          meta: { title: '用户管理', icon: 'User' },
+        },
+        {
+          path: '/dept',
+          name: 'dept',
+          component: () => import('@/views/dept/list.vue'),
+          meta: { title: '部门管理', icon: 'OfficeBuilding' },
+        },
+        {
+          path: '/role',
+          name: 'role',
+          component: () => import('@/views/role/list.vue'),
+          meta: { title: '角色管理', icon: 'Position' },
+        },
+        {
           path: '/about',
           name: 'about',
           component: () => import('@/views/about/index.vue'),
@@ -66,14 +84,18 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
 
+  // 公共路由（如登录页）无需登录
   if (to.meta.public) {
     next()
     return
   }
 
-  if (!userStore.isLoggedIn && to.name !== 'login') {
+  // 检查是否已登录（有token）
+  if (!userStore.isLoggedIn) {
+    // 未登录，重定向到登录页
     next({ name: 'login' })
   } else {
+    // 已登录，允许访问
     next()
   }
 })

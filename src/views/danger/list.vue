@@ -13,20 +13,91 @@
           <el-form-item label="隐患名称">
             <el-input v-model="searchForm.name" placeholder="请输入隐患名称" />
           </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="searchForm.status" placeholder="请选择状态">
-              <el-option label="待整改" value="待整改" />
-              <el-option label="整改中" value="整改中" />
-              <el-option label="已整改" value="已整改" />
-              <el-option label="已关闭" value="已关闭" />
+          <el-form-item label="部门">
+            <el-select v-model="searchForm.departmentId" placeholder="请选择部门" class="filter-select" style="width: 220px;">
+              <el-option label="全部部门" value="" />
+              <template v-for="dept in deptTree" :key="dept.id">
+                <el-option 
+                  :label="dept.departmentName" 
+                  :value="dept.id"
+                >
+                  <div class="dept-option" :class="{'dept-disabled': dept.status === '0'}">
+                    <span :style="{ marginLeft: dept.level * 16 + 'px' }">{{ dept.departmentName }}</span>
+                    <span v-if="dept.status === '0'" class="dept-status">（禁用）</span>
+                  </div>
+                </el-option>
+                <template v-for="child in dept.children" :key="child.id">
+                  <el-option 
+                    :label="child.departmentName" 
+                    :value="child.id"
+                  >
+                    <div class="dept-option" :class="{'dept-disabled': child.status === '0'}">
+                      <span :style="{ marginLeft: child.level * 16 + 'px' }">{{ child.departmentName }}</span>
+                      <span v-if="child.status === '0'" class="dept-status">（禁用）</span>
+                    </div>
+                  </el-option>
+                </template>
+              </template>
             </el-select>
           </el-form-item>
           <el-form-item label="风险等级">
-            <el-select v-model="searchForm.riskLevel" placeholder="请选择风险等级">
-              <el-option label="低" value="低" />
-              <el-option label="中" value="中" />
-              <el-option label="高" value="高" />
+            <el-select v-model="searchForm.riskLevel" placeholder="请选择风险等级" class="filter-select">
+              <el-option label="全部等级" value="" />
+              <el-option label="低" value="1" />
+              <el-option label="中" value="2" />
+              <el-option label="高" value="3" />
+              <el-option label="危险" value="4" />
             </el-select>
+          </el-form-item>
+          <el-form-item label="风险类型">
+            <el-select v-model="searchForm.riskType" placeholder="请选择风险类型" class="filter-select">
+              <el-option label="全部类型" value="" />
+              <el-option label="人的不安全行为" value="1" />
+              <el-option label="物的不安全状态" value="2" />
+              <el-option label="管理缺陷" value="3" />
+              <el-option label="其他" value="4" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="状态">
+            <el-select v-model="searchForm.status" placeholder="请选择状态" class="filter-select">
+              <el-option label="全部状态" value="" />
+              <el-option label="待整改" value="1" />
+              <el-option label="整改中" value="2" />
+              <el-option label="待验收" value="3" />
+              <el-option label="已闭环" value="4" />
+              <el-option label="已撤销" value="5" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="来源">
+            <el-select v-model="searchForm.source" placeholder="请选择来源" class="filter-select">
+              <el-option label="全部来源" value="" />
+              <el-option label="日常检查" value="1" />
+              <el-option label="员工上报" value="2" />
+              <el-option label="上级督办" value="3" />
+              <el-option label="其他" value="4" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="发现时间">
+            <el-date-picker
+              v-model="searchForm.discoveryTime"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
+            />
+          </el-form-item>
+          <el-form-item label="整改期限">
+            <el-date-picker
+              v-model="searchForm.rectificationDeadline"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              format="YYYY-MM-DD"
+              value-format="YYYY-MM-DD"
+            />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleSearch">
@@ -140,6 +211,7 @@ import {
   Delete 
 } from '@element-plus/icons-vue'
 import { dangerApi } from '@/api/danger'
+import { deptApi } from '@/api/dept'
 import type { DangerRecordListResponse } from '@/types/api'
 import { getRiskLevelInfo, getRiskStatusInfo, getRiskTypeInfo, getRiskSourceInfo } from '@/utils/enums'
 
@@ -147,11 +219,40 @@ const router = useRouter()
 const loading = ref(false)
 const dangerRecords = ref<any[]>([])
 
+// 部门数据
+const deptList = ref<Array<{
+  id: string
+  departmentName: string
+  status: string
+  parentDepartmentName?: string
+  departmentPath?: string
+  leaderName?: string
+  leaderId?: string
+  sortOrder?: number
+}>>([])
+const deptTree = ref<Array<{
+  id: string
+  departmentName: string
+  status: string
+  level: number
+  children: Array<{
+    id: string
+    departmentName: string
+    status: string
+    level: number
+  }>
+}>>([])
+
 // 搜索表单
 const searchForm = reactive({
-  name: '',
+  departmentId: '',
+  riskLevel: '',
+  riskType: '',
   status: '',
-  riskLevel: ''
+  source: '',
+  name: '',
+  discoveryTime: [] as string[],
+  rectificationDeadline: [] as string[]
 })
 
 // 分页
@@ -166,8 +267,18 @@ const getDangerRecords = async () => {
   loading.value = true
   try {
     const response = await dangerApi.getDangerRecords({
+      departmentId: searchForm.departmentId,
+      riskLevel: searchForm.riskLevel,
+      riskType: searchForm.riskType,
+      status: searchForm.status,
+      source: searchForm.source,
+      name: searchForm.name,
+      beginDiscoveryTime: searchForm.discoveryTime[0] || '',
+      endDiscoveryTime: searchForm.discoveryTime[1] || '',
+      beginRectificationDeadline: searchForm.rectificationDeadline[0] || '',
+      endRectificationDeadline: searchForm.rectificationDeadline[1] || '',
       current: pagination.current,
-      pageSize: pagination.pageSize
+      size: pagination.pageSize
     })
     dangerRecords.value = response.data
     pagination.total = response.total
@@ -187,11 +298,88 @@ const handleSearch = () => {
 
 // 重置搜索
 const resetSearch = () => {
-  searchForm.name = ''
-  searchForm.status = ''
+  searchForm.departmentId = ''
   searchForm.riskLevel = ''
+  searchForm.riskType = ''
+  searchForm.status = ''
+  searchForm.source = ''
+  searchForm.name = ''
+  searchForm.discoveryTime = []
+  searchForm.rectificationDeadline = []
   pagination.current = 1
   getDangerRecords()
+}
+
+// 构建部门树
+const buildDeptTree = () => {
+  // 构建树结构
+  const tree: Array<{
+    id: string
+    departmentName: string
+    status: string
+    level: number
+    children: Array<{
+      id: string
+      departmentName: string
+      status: string
+      level: number
+    }>
+  }> = []
+  
+  // 检查是否有部门数据
+  if (deptList.value.length === 0) {
+    // 如果没有数据，使用默认的模拟数据
+    const defaultDepts = [
+      {
+        id: '1',
+        departmentName: '管理部门',
+        status: '1'
+      },
+      {
+        id: '2',
+        departmentName: '闲散人员部门',
+        status: '1'
+      }
+    ]
+    
+    defaultDepts.forEach(dept => {
+      tree.push({
+        id: dept.id,
+        departmentName: dept.departmentName,
+        status: dept.status,
+        level: 0,
+        children: []
+      })
+    })
+  } else {
+    // 使用后端返回的部门数据
+    deptList.value.forEach(dept => {
+      tree.push({
+        id: dept.id,
+        departmentName: dept.departmentName,
+        status: dept.status,
+        level: 0,
+        children: []
+      })
+    })
+  }
+  
+  deptTree.value = tree
+}
+
+// 获取部门列表
+const getDeptList = async () => {
+  try {
+    // 调用后端接口获取部门数据
+    const response = await deptApi.getDeptSelectList()
+    deptList.value = response.data
+    buildDeptTree()
+  } catch (error) {
+    console.error('获取部门列表失败:', error)
+    ElMessage.error('获取部门列表失败')
+    // 失败时使用模拟数据
+    buildDeptTree()
+  }
 }
 
 // 分页大小变化
@@ -253,12 +441,28 @@ const formatDate = (dateString: string) => {
 
 // 页面加载时获取数据
 onMounted(() => {
+  getDeptList()
   getDangerRecords()
 })
 </script>
 
 <style scoped lang="scss">
 .danger-list-container {
+  .dept-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &.dept-disabled {
+      color: #909399;
+
+      .dept-status {
+        color: #f56c6c;
+        font-size: 12px;
+      }
+    }
+  }
+
   .page-header {
     margin-bottom: 24px;
 
@@ -286,6 +490,11 @@ onMounted(() => {
     .search-form {
       :deep(.el-form-item) {
         margin-right: 16px;
+      }
+
+      .filter-select {
+        width: 180px;
+        border-radius: 8px;
       }
     }
   }

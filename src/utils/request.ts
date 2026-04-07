@@ -34,6 +34,13 @@ request.interceptors.response.use(
     
     if (data.code === '200') {
       return response
+    } else if (data.code === '502' || data.code === '503' || data.code === '1001') {
+      // token过期或为空
+      ElMessage.error('登录已过期，请重新登录')
+      const userStore = useUserStore()
+      userStore.clearToken()
+      window.location.href = '/login'
+      return Promise.reject(new Error('登录已过期'))
     } else {
       ElMessage.error(data.message || '请求失败')
       return Promise.reject(new Error(data.message || '请求失败'))

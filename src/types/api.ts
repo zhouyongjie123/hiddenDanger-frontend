@@ -3,6 +3,9 @@ export interface ApiResponse<T = any> {
   code: string
   message: string
   data: T
+  total?: number
+  current?: number
+  size?: number
 }
 
 // 登录请求参数（支持两种登录方式）
@@ -23,6 +26,7 @@ export interface UserInfo {
   roleName: string
   tokenName: string
   tokenValue: string
+  avatarUrl: string
 }
 
 // 登录接口响应类型
@@ -44,11 +48,20 @@ interface DangerRecord {
 }
 
 // 隐患记录列表响应
-export interface DangerRecordListResponse {
-  code: string
-  message: string
-  data: DangerRecord[]
-  total: number
-  current: number
-  size: number
+export type DangerRecordListResponse = ApiResponse<DangerRecord[]>
+
+// 用户信息
+export interface User {
+  id: string
+  account: string
+  realName: string
+  phoneNumber: string
+  departmentId: string
+  departmentName: string
+  roleId: string
+  roleName: string
+  avatarUrl: string
 }
+
+// 用户列表响应
+export type UserListResponse = ApiResponse<User[]>

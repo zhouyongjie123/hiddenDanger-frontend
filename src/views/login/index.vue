@@ -190,7 +190,7 @@ const countdown = ref(0)
 
 const loginForm = reactive<LoginRequest>({
   account: 'admin',
-  password: '123456',
+  password: '123',
   phoneNumber: '',
   verificationCode: '',
 })

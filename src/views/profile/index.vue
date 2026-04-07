@@ -12,7 +12,7 @@
           <div class="profile-header">
             <el-avatar :size="120" :icon="UserFilled" class="profile-avatar" />
             <h3 class="profile-name">{{ userStore.userInfo?.realName || userStore.userInfo?.account || '管理员' }}</h3>
-            <p class="profile-role">{{ userStore.userInfo?.roleName || 'ADMIN' }}</p>
+            <p class="profile-role">{{ userStore.userInfo?.roleName || '管理员' }}</p>
             <p class="profile-department">{{ userStore.userInfo?.departmentName || '没有部门' }}</p>
           </div>
           <div class="profile-info">
@@ -137,7 +137,7 @@ const profileForm = reactive({
   realName: userStore.userInfo?.realName || 'zyj',
   phoneNumber: userStore.userInfo?.phoneNumber || '15347758353',
   departmentName: userStore.userInfo?.departmentName || '没有部门',
-  roleName: userStore.userInfo?.roleName || 'ADMIN'
+  roleName: userStore.userInfo?.roleName || '管理员'
 })
 </script>
 
