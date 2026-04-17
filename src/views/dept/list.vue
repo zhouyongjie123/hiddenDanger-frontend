@@ -92,8 +92,20 @@
         }"
         @row-click="handleRowClick"
       >
-        <el-table-column prop="departmentName" label="部门名称" align="center" />
-        <el-table-column prop="parentDepartmentName" label="父部门" align="center" />
+        <el-table-column prop="departmentName" label="部门名称" align="center">
+          <template #default="{ row }">
+            <el-link 
+              :type="row.status === '禁用' ? 'danger' : 'primary'" 
+              @click="handleView(row)"
+              class="department-link"
+              :class="{ 'disabled-department': row.status === '禁用' }"
+            >
+              <el-icon v-if="row.status === '禁用'" class="status-icon"><Close /></el-icon>
+              {{ row.departmentName }}
+              <span v-if="row.status === '禁用'" class="status-tag">(禁用)</span>
+            </el-link>
+          </template>
+        </el-table-column>
         <el-table-column prop="leaderName" label="负责人" align="center">
           <template #default="{ row }">
             <el-link 
@@ -138,20 +150,10 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" align="center">
-          <template #default="{ row }">
-            <el-tag size="small" :type="row.status === '启用' ? 'success' : 'danger'">
-              {{ row.status }}
-            </el-tag>
-          </template>
-        </el-table-column>
+
         <el-table-column label="操作" align="center" width="300">
           <template #default="{ row }">
             <div class="action-buttons">
-              <el-button size="small" @click="handleView(row)" class="action-button view-button">
-                <el-icon><View /></el-icon>
-                查看
-              </el-button>
               <el-button size="small" type="primary" @click="handleEdit(row)" class="action-button edit-button">
                 <el-icon><Edit /></el-icon>
                 编辑
@@ -220,6 +222,87 @@
       </template>
     </el-dialog>
 
+    <!-- 部门详情对话框 -->
+    <el-dialog
+      v-model="deptDetailDialogVisible"
+      title="部门详情"
+      width="600px"
+      destroy-on-close
+      custom-class="dept-detail-dialog"
+      :close-on-click-modal="false"
+    >
+      <div class="dept-detail-container">
+        <!-- 部门基本信息 -->
+        <div class="dept-header">
+          <div class="dept-info">
+            <h3 class="dept-name">{{ deptDetail?.departmentName }}</h3>
+            <div class="dept-meta">
+              <el-tag :type="deptDetail?.status === '禁用' ? 'danger' : 'success'" size="small">
+                {{ deptDetail?.status === '禁用' ? '已禁用' : '正常' }}
+              </el-tag>
+              <span class="dept-id">ID: {{ deptDetail?.id }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 部门统计信息 -->
+        <div class="dept-stats">
+          <div class="stat-item">
+            <div class="stat-icon user-icon">
+              <el-icon><User /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ deptDetail?.userCount }}</div>
+              <div class="stat-label">用户数</div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon risk-icon">
+              <el-icon><Warning /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ deptDetail?.totalHiddenRiskCount }}</div>
+              <div class="stat-label">总隐患</div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon closed-icon">
+              <el-icon><Check /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ deptDetail?.closedHiddenRiskCount }}</div>
+              <div class="stat-label">已闭环</div>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon pending-icon">
+              <el-icon><Timer /></el-icon>
+            </div>
+            <div class="stat-info">
+              <div class="stat-number">{{ deptDetail?.waitRectifyHiddenRiskCount }}</div>
+              <div class="stat-label">待整改</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 部门详细信息 -->
+        <div class="dept-details">
+          <el-descriptions :column="2" border>
+            <el-descriptions-item label="上级部门">{{ deptDetail?.parentDepartmentName || '无' }}</el-descriptions-item>
+            <el-descriptions-item label="部门路径">{{ deptDetail?.departmentPath }}</el-descriptions-item>
+            <el-descriptions-item label="负责人">{{ deptDetail?.leaderName }}</el-descriptions-item>
+            <el-descriptions-item label="负责人电话">{{ deptDetail?.leaderPhoneNumber }}</el-descriptions-item>
+            <el-descriptions-item label="排序">{{ deptDetail?.sortOrder }}</el-descriptions-item>
+          </el-descriptions>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="primary" @click="deptDetailDialogVisible = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
     <!-- 新增部门对话框 -->
     <el-dialog
       v-model="addDialogVisible"
@@ -271,19 +354,20 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, ElTable } from 'element-plus'
-import { 
-  Search, 
-  Plus, 
-  View, 
-  Edit, 
-  Delete, 
-  OfficeBuilding, 
+import {
+  Search,
+  Plus,
+  View,
+  Edit,
+  Delete,
+  OfficeBuilding,
   Refresh,
   User,
   Warning,
   Check,
   Timer,
-  UserFilled
+  UserFilled,
+  Close
 } from '@element-plus/icons-vue'
 import { deptApi } from '@/api/dept'
 import { roleApi } from '@/api/role'
@@ -466,6 +550,9 @@ const getLeaderList = async () => {
 
 // 行样式
 const rowClassName = ({ row, rowIndex }: { row: Department; rowIndex: number }) => {
+  if (row.status === '禁用') {
+    return 'disabled-row'
+  }
   return rowIndex % 2 === 0 ? 'even-row' : 'odd-row'
 }
 
@@ -503,7 +590,8 @@ const handleAdd = () => {
 
 // 查看部门
 const handleView = (row: Department) => {
-  ElMessage.info('查看部门详情')
+  deptDetail.value = row
+  deptDetailDialogVisible.value = true
 }
 
 // 编辑部门
@@ -550,6 +638,10 @@ const handleRowClick = (row: TreeNode) => {
 const leaderInfoDialogVisible = ref(false)
 const leaderInfo = ref<any>(null)
 const leaderInfoLoading = ref(false)
+
+// 部门详情
+const deptDetailDialogVisible = ref(false)
+const deptDetail = ref<any>(null)
 
 const handleLeaderClick = async (leaderId: string, leaderName: string) => {
   leaderInfoLoading.value = true
@@ -915,6 +1007,25 @@ onMounted(async () => {
           background: #fff;
         }
 
+        tr.disabled-row {
+          background: rgba(245, 108, 108, 0.15) !important;
+          border-left: 4px solid #f56c6c !important;
+        }
+
+        tr.disabled-row td {
+          background: rgba(245, 108, 108, 0.15) !important;
+        }
+
+        .status-icon {
+          margin-right: 4px;
+        }
+
+        .status-tag {
+          font-size: 12px;
+          color: #f56c6c;
+          margin-left: 4px;
+        }
+
         tr {
           transition: all 0.3s ease;
 
@@ -994,49 +1105,33 @@ onMounted(async () => {
         }
       }
 
-      .leader-link {
+      .leader-link,
+      .department-link {
         cursor: pointer;
         font-weight: 600;
         transition: all 0.3s ease;
         position: relative;
-        padding-bottom: 2px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        display: inline-block;
 
         &:hover {
-          color: #e94560;
-          transform: translateY(-2px);
+          color: #409eff;
+          background: rgba(64, 158, 255, 0.1);
+          transform: scale(1.05);
+          box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
+        }
 
-          &::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: linear-gradient(90deg, #e94560, #ff6b6b);
-            border-radius: 1px;
-            animation: underlineSlide 0.3s ease-out;
+        &.disabled-department {
+          color: #f56c6c !important;
+          font-weight: 700;
+          text-decoration: line-through;
+
+          &:hover {
+            color: #f56c6c !important;
+            background: rgba(245, 108, 108, 0.1);
+            box-shadow: 0 2px 8px rgba(245, 108, 108, 0.3);
           }
-        }
-
-        &::after {
-          content: '';
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          width: 0;
-          height: 2px;
-          background: linear-gradient(90deg, #e94560, #ff6b6b);
-          border-radius: 1px;
-          transition: width 0.3s ease;
-        }
-      }
-
-      @keyframes underlineSlide {
-        from {
-          width: 0;
-        }
-        to {
-          width: 100%;
         }
       }
 
@@ -1078,6 +1173,115 @@ onMounted(async () => {
         }
 
         .leader-details {
+          margin-top: 20px;
+
+          :deep(.el-descriptions__label) {
+            font-weight: 600;
+            color: #606266;
+          }
+
+          :deep(.el-descriptions__content) {
+            color: #303133;
+          }
+        }
+      }
+
+      .dept-detail-dialog {
+        .el-dialog__body {
+          padding: 24px;
+        }
+      }
+
+      .dept-detail-container {
+        .dept-header {
+          margin-bottom: 24px;
+          padding-bottom: 20px;
+          border-bottom: 1px solid #e4e7ed;
+
+          .dept-info {
+            .dept-name {
+              margin: 0 0 12px 0;
+              font-size: 20px;
+              font-weight: 600;
+              color: #303133;
+            }
+
+            .dept-meta {
+              display: flex;
+              align-items: center;
+              gap: 16px;
+
+              .dept-id {
+                font-size: 14px;
+                color: #606266;
+              }
+            }
+          }
+        }
+
+        .dept-stats {
+          display: flex;
+          gap: 16px;
+          margin-bottom: 24px;
+
+          .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+
+            &:hover {
+              background: #ecf5ff;
+            }
+
+            .stat-icon {
+              width: 40px;
+              height: 40px;
+              margin: 0 auto 8px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              font-size: 18px;
+
+              &.user-icon {
+                background: #ecf5ff;
+                color: #409eff;
+              }
+
+              &.risk-icon {
+                background: #fef0f0;
+                color: #f56c6c;
+              }
+
+              &.closed-icon {
+                background: #f0f9eb;
+                color: #67c23a;
+              }
+
+              &.pending-icon {
+                background: #fdf6ec;
+                color: #e6a23c;
+              }
+            }
+
+            .stat-number {
+              font-size: 20px;
+              font-weight: 600;
+              color: #303133;
+              margin-bottom: 4px;
+            }
+
+            .stat-label {
+              font-size: 12px;
+              color: #606266;
+            }
+          }
+        }
+
+        .dept-details {
           margin-top: 20px;
 
           :deep(.el-descriptions__label) {
